@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.database import SessionLocal
 from app.models.cattle import Cattle
+from app.models.cattle_note import CattleNote
 from app.models.cattle import GenderEnum, StatusEnum
 
 
@@ -23,7 +24,14 @@ def clean_id(v):
 def parse_date(v):
     if pd.isna(v):
         return None
-    return pd.to_datetime(v).date()
+    s = str(v).strip()
+    # yy.mm.dd 형식 (예: 25.11.24)
+    try:
+        return datetime.strptime(s, "%y.%m.%d").date()
+    except ValueError:
+        pass
+    # 그 외 형식은 pandas에 위임
+    return pd.to_datetime(s).date()
 
 
 def parse_gender(v):
@@ -66,6 +74,12 @@ def parse_status(v):
 
 def main():
     db = SessionLocal()
+
+    print("=== 기존 데이터 삭제 ===")
+    deleted = db.query(CattleNote).delete()
+    deleted = db.query(Cattle).delete()
+    db.commit()
+    print(f"cattle {deleted}건 삭제 완료")
 
     df = pd.read_excel(EXCEL_PATH)
 
