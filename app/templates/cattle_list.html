@@ -12,19 +12,19 @@
         <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--color-text-secondary);">
             필터: <strong style="color: var(--color-blue);">{{ page_filter_label }}</strong>
             &nbsp;<span style="color: #d1d5db;">·</span>&nbsp;
-            <a href="/" style="color: var(--color-text-secondary);">← 대시보드</a>
+            <a href="{{ url_for('dashboard') }}" style="color: var(--color-text-secondary);">← 대시보드</a>
             &nbsp;<span style="color: #d1d5db;">·</span>&nbsp;
-            <a href="/cattle" style="color: var(--color-text-secondary);">전체 보기</a>
+            <a href="{{ url_for('cattle_list') }}" style="color: var(--color-text-secondary);">전체 보기</a>
         </p>
         {% endif %}
     </div>
-    <a href="/cattle/new" class="btn btn-primary">+ 새 소 등록</a>
+    <a href="{{ url_for('cattle_new') }}" class="btn btn-primary">+ 새 소 등록</a>
 </div>
 
 <!-- 특수 필터(대시보드 카드 진입)가 아닐 때만 검색 폼 표시 -->
 {% if not current_filter %}
 <div class="card">
-    <form method="get" action="/cattle">
+    <form method="get" action="{{ url_for('cattle_list') }}">
         <div class="flex gap-2 items-center">
             <div class="form-group" style="margin-bottom: 0; flex: 1;">
                 <input
@@ -55,7 +55,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary">검색</button>
-            <a href="/cattle" class="btn btn-secondary">초기화</a>
+            <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">초기화</a>
         </div>
     </form>
 </div>
@@ -86,7 +86,7 @@
             <tbody>
                 {% if cattle_list %}
                     {% for cattle in cattle_list %}
-                    <tr class="cattle-row" data-href="/cattle/{{ cattle.id }}" style="cursor: pointer;">
+                    <tr class="cattle-row" data-href="{{ url_for('cattle_detail', cattle_id=cattle.id) }}" style="cursor: pointer;">
                         <td>
                             <span style="color: var(--color-blue); font-weight: 700;">
                                 {{ cattle.identification_number }}
@@ -123,13 +123,13 @@
                         </td>
                         <td>
                             {% if cattle.mother_id and cattle.mother_id in mother_number_map %}
-                                <a href="/cattle/{{ cattle.mother_id }}"
+                                <a href="{{ url_for('cattle_detail', cattle_id=cattle.mother_id) }}"
                                    onclick="event.stopPropagation()"
                                    style="color: #6b7280; font-weight: 600; text-decoration: none;">
                                     {{ mother_number_map[cattle.mother_id] }}
                                 </a>
                             {% elif cattle.mother_id %}
-                                <a href="/cattle/{{ cattle.mother_id }}"
+                                <a href="{{ url_for('cattle_detail', cattle_id=cattle.mother_id) }}"
                                    onclick="event.stopPropagation()"
                                    style="color: #6b7280; text-decoration: none;">
                                     모 #{{ cattle.mother_id }}

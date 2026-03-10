@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.config import settings
 from app.database import engine, Base
@@ -17,6 +18,9 @@ app = FastAPI(
     version=settings.VERSION,
     debug=settings.DEBUG
 )
+
+# HTTPS 리버스 프록시 헤더 처리 (Nginx SSL 종단 시 url_for가 https:// 생성하도록)
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # CORS 미들웨어 설정 (필요한 경우)
 app.add_middleware(

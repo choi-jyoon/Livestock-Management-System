@@ -6,7 +6,7 @@
 <div class="flex items-center justify-between mb-2">
     <h2 style="font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;">🐄 소 상세 정보</h2>
     <div class="flex gap-1">
-        <a href="/cattle" class="btn btn-secondary">← 목록으로</a>
+        <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">← 목록으로</a>
         <button class="btn btn-primary" onclick="openEditModal()">✏️ 정보 수정</button>
         <button class="btn btn-danger" onclick="if(confirm('정말 삭제하시겠습니까?')) deleteCattle()">삭제</button>
     </div>
@@ -57,7 +57,7 @@
             <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">모 개체</div>
             <div>
                 {% if mother %}
-                    <a href="/cattle/{{ mother.id }}" style="color: var(--color-blue); text-decoration: none; font-weight: 700; font-size: 1.125rem;">
+                    <a href="{{ url_for('cattle_detail', cattle_id=mother.id) }}" style="color: var(--color-blue); text-decoration: none; font-weight: 700; font-size: 1.125rem;">
                         {{ mother.identification_number[9:13] if mother.identification_number|length >= 13 else mother.identification_number }}
                     </a>
                     <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem;">{{ mother.identification_number }}</div>

@@ -31,7 +31,8 @@ class Settings:
     DESCRIPTION: str = "축산 관리 시스템 - 소 개체 관리 및 번식 일정 추적"
     
     # CORS (필요시 추가)
-    ALLOWED_ORIGINS: list = ["http://localhost:8000", "http://127.0.0.1:8000"]
+    ALLOWED_ORIGINS: list = ["http://localhost:8000", "http://127.0.0.1:8000", "https://mycow.cloud",
+    "http://mycow.cloud"]
 
 
 # 설정 인스턴스 생성

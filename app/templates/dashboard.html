@@ -20,7 +20,7 @@
 <div class="stats-grid">
 
     <!-- 임신 중인 소 -->
-    <a href="/cattle?filter=pregnant" class="stat-card stat-card--green stat-card--link">
+    <a href="{{ url_for('cattle_list') }}?filter=pregnant" class="stat-card stat-card--green stat-card--link">
         <div class="stat-card__icon">🤰</div>
         <div class="stat-card__body">
             <p class="stat-card__label">임신 중인 소</p>
@@ -30,7 +30,7 @@
     </a>
 
     <!-- 수정한 소 -->
-    <a href="/cattle?filter=bred" class="stat-card stat-card--blue stat-card--link">
+    <a href="{{ url_for('cattle_list') }}?filter=bred" class="stat-card stat-card--blue stat-card--link">
         <div class="stat-card__icon">💉</div>
         <div class="stat-card__body">
             <p class="stat-card__label">수정한 소 (결과 대기)</p>
@@ -40,7 +40,7 @@
     </a>
 
     <!-- 전체 소 -->
-    <a href="/cattle" class="stat-card stat-card--orange stat-card--link">
+    <a href="{{ url_for('cattle_list') }}" class="stat-card stat-card--orange stat-card--link">
         <div class="stat-card__icon">🐄</div>
         <div class="stat-card__body">
             <p class="stat-card__label">전체 소</p>
@@ -72,7 +72,7 @@
 
     <!-- 1. 수정 예정 -->
     <div class="event-card event-card--blue">
-        <a href="/cattle?filter=breeding_due" class="event-card__header event-card__header--link">
+        <a href="{{ url_for('cattle_list') }}?filter=breeding_due" class="event-card__header event-card__header--link">
             <div class="event-card__header-left">
                 <span class="event-card__icon">💊</span>
                 <span class="event-card__title">수정 예정</span>
@@ -86,7 +86,7 @@
             {% if events.breeding_due %}
                 {% for event in events.breeding_due %}
                 <div class="event-row">
-                    <a href="/cattle/{{ event.cattle_id }}" class="event-row__id">{{ event.cattle_number }}</a>
+                    <a href="{{ url_for('cattle_detail', cattle_id=event.cattle_id) }}" class="event-row__id">{{ event.cattle_number }}</a>
                     <span class="event-row__msg">{{ event.message }}</span>
                     <span class="priority priority--{{ event.priority }}">
                         {% if event.priority == 'normal' %}보통
@@ -108,7 +108,7 @@
 
     <!-- 2. 재발정 확인 -->
     <div class="event-card event-card--pink">
-        <a href="/cattle?filter=estrus_check" class="event-card__header event-card__header--link">
+        <a href="{{ url_for('cattle_list') }}?filter=estrus_check" class="event-card__header event-card__header--link">
             <div class="event-card__header-left">
                 <span class="event-card__icon">🔍</span>
                 <span class="event-card__title">재발정 확인</span>
@@ -122,7 +122,7 @@
             {% if events.estrus_check %}
                 {% for event in events.estrus_check %}
                 <div class="event-row">
-                    <a href="/cattle/{{ event.cattle_id }}" class="event-row__id">{{ event.cattle_number }}</a>
+                    <a href="{{ url_for('cattle_detail', cattle_id=event.cattle_id) }}" class="event-row__id">{{ event.cattle_number }}</a>
                     <span class="event-row__msg">{{ event.message }} - {{ event.note }}</span>
                     <span class="priority priority--{{ event.priority }}">
                         {% if event.priority == 'normal' %}보통
@@ -145,7 +145,7 @@
 
     <!-- 3. 임신 확인 -->
     <div class="event-card event-card--purple">
-        <a href="/cattle?filter=pregnancy_check" class="event-card__header event-card__header--link">
+        <a href="{{ url_for('cattle_list') }}?filter=pregnancy_check" class="event-card__header event-card__header--link">
             <div class="event-card__header-left">
                 <span class="event-card__icon">🩺</span>
                 <span class="event-card__title">임신 확인</span>
@@ -159,7 +159,7 @@
             {% if events.pregnancy_check %}
                 {% for event in events.pregnancy_check %}
                 <div class="event-row">
-                    <a href="/cattle/{{ event.cattle_id }}" class="event-row__id">{{ event.cattle_number }}</a>
+                    <a href="{{ url_for('cattle_detail', cattle_id=event.cattle_id) }}" class="event-row__id">{{ event.cattle_number }}</a>
                     <span class="event-row__msg">{{ event.message }}</span>
                     <span class="priority priority--{{ event.priority }}">
                         {% if event.priority == 'normal' %}보통
@@ -182,7 +182,7 @@
 
     <!-- 4. 출산 예정 -->
     <div class="event-card event-card--green">
-        <a href="/cattle?filter=birth_due" class="event-card__header event-card__header--link">
+        <a href="{{ url_for('cattle_list') }}?filter=birth_due" class="event-card__header event-card__header--link">
             <div class="event-card__header-left">
                 <span class="event-card__icon">🐣</span>
                 <span class="event-card__title">출산 예정</span>
@@ -196,7 +196,7 @@
             {% if events.birth_due %}
                 {% for event in events.birth_due %}
                 <div class="event-row">
-                    <a href="/cattle/{{ event.cattle_id }}" class="event-row__id">{{ event.cattle_number }}</a>
+                    <a href="{{ url_for('cattle_detail', cattle_id=event.cattle_id) }}" class="event-row__id">{{ event.cattle_number }}</a>
                     <span class="event-row__msg">{{ event.message }} (예정일: {{ event.expected_date }})</span>
                     <span class="priority priority--{{ event.priority }}">
                         {% if event.priority == 'normal' %}보통
@@ -219,7 +219,7 @@
 
     <!-- 5. 출산 지연 (긴급) -->
     <div class="event-card event-card--red event-card--urgent">
-        <a href="/cattle?filter=birth_overdue" class="event-card__header event-card__header--link">
+        <a href="{{ url_for('cattle_list') }}?filter=birth_overdue" class="event-card__header event-card__header--link">
             <div class="event-card__header-left">
                 <span class="event-card__icon">🚨</span>
                 <span class="event-card__title">출산 지연</span>
@@ -234,7 +234,7 @@
             {% if events.birth_overdue %}
                 {% for event in events.birth_overdue %}
                 <div class="event-row">
-                    <a href="/cattle/{{ event.cattle_id }}" class="event-row__id">{{ event.cattle_number }}</a>
+                    <a href="{{ url_for('cattle_detail', cattle_id=event.cattle_id) }}" class="event-row__id">{{ event.cattle_number }}</a>
                     <span class="event-row__msg">{{ event.message }} - {{ event.action }}</span>
                     <span class="priority priority--{{ event.priority }}">
                         {% if event.priority == 'normal' %}보통
