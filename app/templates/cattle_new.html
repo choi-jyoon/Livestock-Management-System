@@ -9,7 +9,7 @@
         <h2 class="page-title">새 소 등록</h2>
         <p class="page-subtitle">새로운 소의 기본 정보를 입력하세요</p>
     </div>
-    <a href="/cattle" class="btn btn-secondary">← 목록으로</a>
+    <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">← 목록으로</a>
 </div>
 
 <div class="card" style="max-width: 600px;">
@@ -61,7 +61,7 @@
 
         <div class="flex gap-1" style="margin-top: 1.5rem;">
             <button type="submit" class="btn btn-primary" id="submit-btn">등록하기</button>
-            <a href="/cattle" class="btn btn-secondary">취소</a>
+            <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">취소</a>
         </div>
 
     </form>
