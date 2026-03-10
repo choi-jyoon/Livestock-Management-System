@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}새 소 등록 - Livestock Management System{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h2 class="page-title">새 소 등록</h2>
+        <p class="page-subtitle">새로운 소의 기본 정보를 입력하세요</p>
+    </div>
+    <a href="/cattle" class="btn btn-secondary">← 목록으로</a>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <!-- 에러/성공 메시지 영역 -->
+    <div id="alert-box" style="display:none; margin-bottom: 1rem;"></div>
+
+    <form id="cattle-form">
+
+        <div class="form-group">
+            <label class="form-label">개체 번호 <span style="color: var(--color-red);">*</span></label>
+            <input type="text" name="identification_number" class="form-input" placeholder="예) KPN1234567" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">성별 <span style="color: var(--color-red);">*</span></label>
+            <select name="gender" class="form-input" required>
+                <option value="">선택하세요</option>
+                <option value="FEMALE">암소 ♀</option>
+                <option value="MALE">수소 ♂</option>
+                <option value="FREEMARTIN">프리마틴</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">출생일 <span style="color: var(--color-red);">*</span></label>
+            <input type="date" name="birth_date" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">상태</label>
+            <select name="status" class="form-input">
+                <option value="ACTIVE">활성</option>
+                <option value="SOLD">판매됨</option>
+                <option value="DECEASED">폐사</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">모 개체 (선택)</label>
+            <select name="mother_id" class="form-input">
+                <option value="">없음</option>
+                {% for c in all_cattle %}
+                    {% if c.gender.value == 'FEMALE' %}
+                    <option value="{{ c.id }}">{{ c.identification_number }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex gap-1" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary" id="submit-btn">등록하기</button>
+            <a href="/cattle" class="btn btn-secondary">취소</a>
+        </div>
+
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('cattle-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const submitBtn = document.getElementById('submit-btn');
+    const alertBox = document.getElementById('alert-box');
+
+    // 폼 데이터 → JSON 변환
+    const formData = new FormData(form);
+    const body = {};
+    formData.forEach((value, key) => {
+        if (value !== '') {
+            body[key] = value;
+        }
+    });
+
+    // mother_id는 숫자로 변환
+    if (body.mother_id) {
+        body.mother_id = parseInt(body.mother_id);
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '등록 중...';
+    alertBox.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/cattle/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            // 등록 성공 → 상세 페이지로 이동
+            window.location.href = `/cattle/${data.id}`;
+        } else {
+            const err = await res.json();
+            const msg = err.detail?.[0]?.msg || JSON.stringify(err.detail);
+            alertBox.innerHTML = `<div class="alert alert-danger">❌ 등록 실패: ${msg}</div>`;
+            alertBox.style.display = 'block';
+        }
+    } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-danger">❌ 네트워크 오류가 발생했습니다.</div>`;
+        alertBox.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록하기';
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}
