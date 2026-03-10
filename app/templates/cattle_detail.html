@@ -1,0 +1,1037 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cattle.identification_number }} - Livestock Management System{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h2 style="font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;">🐄 소 상세 정보</h2>
+    <div class="flex gap-1">
+        <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">← 목록으로</a>
+        <button class="btn btn-primary" onclick="openEditModal()">✏️ 정보 수정</button>
+        <button class="btn btn-danger" onclick="if(confirm('정말 삭제하시겠습니까?')) deleteCattle()">삭제</button>
+    </div>
+</div>
+
+<!-- 기본 정보 카드 -->
+<div class="card">
+    <div class="card-header">📋 기본 정보</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">개체 식별 번호</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-blue);">{{ cattle.identification_number }}</div>
+        </div>
+
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">성별</div>
+            <div style="font-size: 1.125rem; font-weight: 600;">
+                {% if cattle.gender.value == 'FEMALE' %}암소 ♀
+                {% elif cattle.gender.value == 'MALE' %}수소 ♂
+                {% else %}프리마틴{% endif %}
+            </div>
+        </div>
+
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">출생일</div>
+            <div style="font-size: 1.125rem; font-weight: 600;">{{ cattle.birth_date }}</div>
+        </div>
+
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">개월 수</div>
+            <div style="font-size: 1.125rem; font-weight: 600;">{{ cattle.age_months }}개월</div>
+        </div>
+
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">상태</div>
+            <div>
+                {% if cattle.status.value == 'ACTIVE' %}
+                    <span class="badge badge-success">활성</span>
+                {% elif cattle.status.value == 'SOLD' %}
+                    <span class="badge badge-warning">판매됨</span>
+                {% else %}
+                    <span class="badge badge-danger">폐사</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <div style="color: #6b7280; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">모 개체</div>
+            <div>
+                {% if mother %}
+                    <a href="{{ url_for('cattle_detail', cattle_id=mother.id) }}" style="color: var(--color-blue); text-decoration: none; font-weight: 700; font-size: 1.125rem;">
+                        {{ mother.identification_number[9:13] if mother.identification_number|length >= 13 else mother.identification_number }}
+                    </a>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem;">{{ mother.identification_number }}</div>
+                {% else %}
+                    <span style="color: #9ca3af; font-size: 0.9rem;">-</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 자식 개체 리스트 (있을 때만) -->
+{% if children %}
+<div class="card">
+    <div class="card-header">🐮 자식 개체 <span style="font-size:0.875rem; font-weight:500; color:#6b7280;">({{ children|length }}마리)</span></div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>개체번호</th>
+                    <th>성별</th>
+                    <th>출생일</th>
+                    <th>개월 수</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for child in children %}
+                <tr style="cursor:pointer;" onclick="window.location.href='/cattle/{{ child.id }}'">
+                    <td>
+                        <span style="color: var(--color-blue); font-weight: 700;">
+                            {{ child.identification_number }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if child.gender.value == 'FEMALE' %}
+                            <span class="badge badge-info">암소 ♀</span>
+                        {% elif child.gender.value == 'MALE' %}
+                            <span class="badge" style="background:#dbeafe;color:#1e40af;">수소 ♂</span>
+                        {% else %}
+                            <span class="badge" style="background:#e5e7eb;color:#374151;">프리마틴</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ child.birth_date }}</td>
+                    <td>{{ child.age_months }}개월</td>
+                    <td>
+                        {% if child.status.value == 'ACTIVE' %}
+                            <span class="badge badge-success">활성</span>
+                        {% elif child.status.value == 'SOLD' %}
+                            <span class="badge badge-warning">판매됨</span>
+                        {% else %}
+                            <span class="badge badge-danger">폐사</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- 수정 이력 -->
+<div class="card">
+    <div class="card-header">
+        💉 수정 이력
+        {% if cattle.gender.value == 'FEMALE' %}
+        <button class="btn btn-primary" style="float: right; padding: 0.4rem 0.875rem;" onclick="openBreedingModal()">+ 수정 추가</button>
+        {% endif %}
+    </div>
+
+    {% if breeding_records %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>수정일</th>
+                        <th>정액 번호</th>
+                        <th>결과</th>
+                        <th>결과 확인일</th>
+                        <th>임신 개월</th>
+                        <th>출산 예정일</th>
+                        <th>실제 출산일</th>
+                        <th>출산 유형</th>
+                        <th>액션</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in breeding_records %}
+                    <tr>
+                        <td>{{ record.breeding_date }}</td>
+                        <td>{{ record.semen_id or '-' }}</td>
+                        <td>
+                            {% if record.result.value == 'PREGNANT' %}
+                                <span class="badge badge-success">임신</span>
+                            {% elif record.result.value == 'FAILED' %}
+                                <span class="badge badge-danger">실패</span>
+                            {% else %}
+                                <span class="badge badge-warning">대기중</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.result_check_date or '-' }}</td>
+                        <td>
+                            {% if record.result.value == 'PREGNANT' and not record.actual_calving_date %}
+                                {{ record.pregnancy_months }}개월
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ record.expected_calving_date or '-' }}</td>
+                        <td>{{ record.actual_calving_date or '-' }}</td>
+                        <td>
+                            {% if record.birth_type %}
+                                {% if record.birth_type.value == 'EASY' %}
+                                    <span class="badge badge-success">순산</span>
+                                {% else %}
+                                    <span class="badge badge-danger">난산</span>
+                                {% endif %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:0.375rem; flex-wrap:wrap;">
+                                {% if record.result.value == 'PENDING' %}
+                                    <button class="btn btn-secondary"
+                                            style="padding: 0.25rem 0.625rem; font-size: 0.8rem;"
+                                            onclick="openResultModal({{ record.id }})">
+                                        결과 입력
+                                    </button>
+                                {% elif record.result.value == 'PREGNANT' and not record.actual_calving_date %}
+                                    <button class="btn btn-secondary"
+                                            style="padding: 0.25rem 0.625rem; font-size: 0.8rem;"
+                                            onclick="openBirthModal({{ record.id }})">
+                                        출산 입력
+                                    </button>
+                                {% endif %}
+                                <button class="btn btn-secondary btn-breeding-edit"
+                                        style="padding: 0.25rem 0.625rem; font-size: 0.8rem;"
+                                        data-id="{{ record.id }}"
+                                        data-date="{{ record.breeding_date }}"
+                                        data-semen="{{ record.semen_id or '' }}"
+                                        data-result="{{ record.result.value }}"
+                                        data-result-date="{{ record.result_check_date or '' }}"
+                                        data-actual-date="{{ record.actual_calving_date or '' }}"
+                                        data-birth-type="{{ record.birth_type.value if record.birth_type else '' }}"
+                                        data-notes="{{ record.notes or '' }}">
+                                    ✏️ 수정
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state"><p>수정 이력이 없습니다.</p></div>
+    {% endif %}
+</div>
+
+<!-- 특이사항 -->
+<div class="card">
+    <div class="card-header">
+        📝 날짜별 특이사항
+        <button class="btn btn-primary" style="float: right; padding: 0.4rem 0.875rem;" onclick="openNoteModal()">+ 특이사항 추가</button>
+    </div>
+
+    {% if notes %}
+        <div>
+            {% for note in notes %}
+            <div class="event-item note-row {% if not note.is_active %}note-inactive{% endif %}"
+                 data-note-id="{{ note.id }}">
+                <!-- 활성화 토글 체크박스 -->
+                <div style="flex: 0 0 auto; display:flex; align-items:center;" title="{{ '활성' if note.is_active else '비활성' }}">
+                    <input type="checkbox"
+                           class="note-active-toggle"
+                           data-id="{{ note.id }}"
+                           {% if note.is_active %}checked{% endif %}
+                           style="width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: #16a34a;">
+                </div>
+                <div style="flex: 0 0 110px; font-weight: 600; {% if not note.is_active %}color: #9ca3af;{% endif %}">{{ note.note_date }}</div>
+                <div style="flex: 0 0 80px;">
+                    {% if note.note_type.value == 'SYMPTOM' %}
+                        <span class="badge badge-warning">증상</span>
+                    {% elif note.note_type.value == 'TREATMENT' %}
+                        <span class="badge badge-info">투약</span>
+                    {% elif note.note_type.value == 'BIRTH' %}
+                        <span class="badge badge-success">출산</span>
+                    {% else %}
+                        <span class="badge" style="background: #e5e7eb; color: #374151;">기타</span>
+                    {% endif %}
+                </div>
+                <div style="flex: 1; {% if not note.is_active %}color: #9ca3af; text-decoration: line-through;{% else %}color: #374151;{% endif %}">
+                    {{ note.content }}
+                </div>
+                <div style="flex: 0 0 auto; margin-left: 0.75rem; display:flex; gap:0.375rem;">
+                    <button class="btn btn-secondary btn-note-edit"
+                            style="padding: 0.2rem 0.625rem; font-size: 0.8rem;"
+                            data-id="{{ note.id }}"
+                            data-date="{{ note.note_date }}"
+                            data-type="{{ note.note_type.value }}"
+                            data-content="{{ note.content | e }}">
+                        ✏️ 수정
+                    </button>
+                    <button class="btn btn-danger btn-note-delete"
+                            style="padding: 0.2rem 0.625rem; font-size: 0.8rem;"
+                            data-id="{{ note.id }}">
+                        🗑️ 삭제
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state"><p>특이사항이 없습니다.</p></div>
+    {% endif %}
+</div>
+
+
+<!-- ===== 정보 수정 모달 ===== -->
+<div id="edit-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">✏️ 소 정보 수정</h3>
+            <button onclick="closeEditModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="edit-alert" style="display:none; margin-bottom:1rem;"></div>
+
+        <form id="edit-form">
+            <div class="form-group">
+                <label class="form-label">개체 번호</label>
+                <input type="text" id="edit-identification_number" class="form-input"
+                       value="{{ cattle.identification_number }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">성별</label>
+                <select id="edit-gender" class="form-input" required>
+                    <option value="FEMALE" {% if cattle.gender.value == 'FEMALE' %}selected{% endif %}>암소 ♀</option>
+                    <option value="MALE"   {% if cattle.gender.value == 'MALE' %}selected{% endif %}>수소 ♂</option>
+                    <option value="FREEMARTIN" {% if cattle.gender.value == 'FREEMARTIN' %}selected{% endif %}>프리마틴</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">출생일</label>
+                <input type="date" id="edit-birth_date" class="form-input"
+                       value="{{ cattle.birth_date }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">상태</label>
+                <select id="edit-status" class="form-input">
+                    <option value="ACTIVE"   {% if cattle.status.value == 'ACTIVE' %}selected{% endif %}>활성</option>
+                    <option value="SOLD"     {% if cattle.status.value == 'SOLD' %}selected{% endif %}>판매됨</option>
+                    <option value="DECEASED" {% if cattle.status.value == 'DECEASED' %}selected{% endif %}>폐사</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">모 개체 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
+                <select id="edit-mother_id" class="form-input">
+                    <option value="">-- 없음 --</option>
+                    {% for c in all_female_cattle %}
+                    <option value="{{ c.id }}"
+                        {% if cattle.mother_id == c.id %}selected{% endif %}>
+                        {{ c.identification_number[9:13] if c.identification_number|length >= 13 else c.identification_number }}
+                        ({{ c.identification_number }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="edit-submit-btn" style="flex:1;">저장하기</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 수정 기록 추가 모달 ===== -->
+<div id="breeding-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">💉 수정 기록 추가</h3>
+            <button onclick="closeBreedingModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="breeding-alert" style="display:none; margin-bottom:1rem;"></div>
+
+        <form id="breeding-form">
+            <div class="form-group">
+                <label class="form-label">수정일 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="breeding-date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">정액 번호 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
+                <input type="text" id="breeding-semen_id" class="form-input" placeholder="예: KPN-2024-001">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">메모 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
+                <textarea id="breeding-notes" class="form-input" rows="3"
+                          placeholder="특이사항이 있으면 입력하세요"
+                          style="resize: vertical;"></textarea>
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.75rem; margin-bottom:1rem; font-size:0.875rem; color:#166534;">
+                💡 출산 예정일은 수정일 기준 285일 후로 자동 계산됩니다.
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+                <button type="submit" class="btn btn-primary" id="breeding-submit-btn" style="flex:1;">기록 저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeBreedingModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 임신 결과 입력 모달 ===== -->
+<div id="result-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 440px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">🔍 임신 결과 입력</h3>
+            <button onclick="closeResultModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="result-alert" style="display:none; margin-bottom:1rem;"></div>
+        <input type="hidden" id="result-breeding-id">
+
+        <form id="result-form">
+            <div class="form-group">
+                <label class="form-label">결과 <span style="color:#ef4444;">*</span></label>
+                <div style="display:flex; gap:0.75rem;">
+                    <label style="flex:1; display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1rem; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:border-color 0.15s;"
+                           id="result-pregnant-label">
+                        <input type="radio" name="result" value="PREGNANT" style="accent-color: #16a34a;">
+                        <span>✅ 임신</span>
+                    </label>
+                    <label style="flex:1; display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1rem; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:border-color 0.15s;"
+                           id="result-failed-label">
+                        <input type="radio" name="result" value="FAILED" style="accent-color: #dc2626;">
+                        <span>❌ 실패</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">결과 확인일 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="result-check-date" class="form-input" required>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="result-submit-btn" style="flex:1;">저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeResultModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 출산 정보 입력 모달 ===== -->
+<div id="birth-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 440px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">🐣 출산 정보 입력</h3>
+            <button onclick="closeBirthModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="birth-alert" style="display:none; margin-bottom:1rem;"></div>
+        <input type="hidden" id="birth-breeding-id">
+
+        <form id="birth-form">
+            <div class="form-group">
+                <label class="form-label">실제 출산일 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="birth-actual-date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">출산 유형 <span style="color:#ef4444;">*</span></label>
+                <div style="display:flex; gap:0.75rem;">
+                    <label style="flex:1; display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1rem; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:border-color 0.15s;"
+                           id="birth-easy-label">
+                        <input type="radio" name="birth_type" value="EASY" style="accent-color: #16a34a;">
+                        <span>😊 순산</span>
+                    </label>
+                    <label style="flex:1; display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1rem; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:border-color 0.15s;"
+                           id="birth-difficult-label">
+                        <input type="radio" name="birth_type" value="DIFFICULT" style="accent-color: #dc2626;">
+                        <span>😰 난산</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="birth-submit-btn" style="flex:1;">저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeBirthModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 수정 기록 편집 모달 ===== -->
+<div id="breeding-edit-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">✏️ 수정 기록 편집</h3>
+            <button onclick="closeBreedingEditModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="breeding-edit-alert" style="display:none; margin-bottom:1rem;"></div>
+        <input type="hidden" id="breeding-edit-id">
+
+        <form id="breeding-edit-form">
+            <div class="form-group">
+                <label class="form-label">수정일 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="breeding-edit-date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">정액 번호 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
+                <input type="text" id="breeding-edit-semen" class="form-input" placeholder="예: KPN-2024-001">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">결과</label>
+                <select id="breeding-edit-result" class="form-input" onchange="toggleBreedingEditResultFields()">
+                    <option value="PENDING">대기중</option>
+                    <option value="PREGNANT">임신</option>
+                    <option value="FAILED">실패</option>
+                </select>
+            </div>
+
+            <div id="breeding-edit-result-date-group" class="form-group" style="display:none;">
+                <label class="form-label">결과 확인일</label>
+                <input type="date" id="breeding-edit-result-date" class="form-input">
+            </div>
+
+            <div id="breeding-edit-birth-group" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">실제 출산일</label>
+                    <input type="date" id="breeding-edit-actual-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">출산 유형</label>
+                    <select id="breeding-edit-birth-type" class="form-input">
+                        <option value="">-- 미입력 --</option>
+                        <option value="EASY">순산</option>
+                        <option value="DIFFICULT">난산</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">메모 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
+                <textarea id="breeding-edit-notes" class="form-input" rows="3"
+                          style="resize: vertical;" placeholder="메모 내용"></textarea>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="breeding-edit-submit-btn" style="flex:1;">저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeBreedingEditModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 특이사항 편집 모달 ===== -->
+<div id="note-edit-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">✏️ 특이사항 편집</h3>
+            <button onclick="closeNoteEditModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="note-edit-alert" style="display:none; margin-bottom:1rem;"></div>
+        <input type="hidden" id="note-edit-id">
+
+        <form id="note-edit-form">
+            <div class="form-group">
+                <label class="form-label">날짜 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="note-edit-date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">유형 <span style="color:#ef4444;">*</span></label>
+                <select id="note-edit-type" class="form-input" required>
+                    <option value="SYMPTOM">🤒 증상</option>
+                    <option value="TREATMENT">💊 투약/치료</option>
+                    <option value="BIRTH">🐣 출산</option>
+                    <option value="OTHER">📌 기타</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">내용 <span style="color:#ef4444;">*</span></label>
+                <textarea id="note-edit-content" class="form-input" rows="4"
+                          style="resize: vertical;" required></textarea>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="note-edit-submit-btn" style="flex:1;">저장</button>
+                <button type="button" class="btn btn-danger" id="note-edit-delete-btn" style="flex: 0 0 auto; padding: 0 1rem;">삭제</button>
+                <button type="button" class="btn btn-secondary" onclick="closeNoteEditModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ===== 특이사항 추가 모달 ===== -->
+<div id="note-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+            <h3 style="font-size:1.125rem; font-weight:700; letter-spacing:-0.02em;">📝 특이사항 추가</h3>
+            <button onclick="closeNoteModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        </div>
+
+        <div id="note-alert" style="display:none; margin-bottom:1rem;"></div>
+
+        <form id="note-form">
+            <div class="form-group">
+                <label class="form-label">날짜 <span style="color:#ef4444;">*</span></label>
+                <input type="date" id="note-date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">유형 <span style="color:#ef4444;">*</span></label>
+                <select id="note-type" class="form-input" required>
+                    <option value="">-- 선택 --</option>
+                    <option value="SYMPTOM">🤒 증상</option>
+                    <option value="TREATMENT">💊 투약/치료</option>
+                    <option value="BIRTH">🐣 출산</option>
+                    <option value="OTHER">📌 기타</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">내용 <span style="color:#ef4444;">*</span></label>
+                <textarea id="note-content" class="form-input" rows="4"
+                          placeholder="특이사항 내용을 입력하세요"
+                          style="resize: vertical;" required></textarea>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary" id="note-submit-btn" style="flex:1;">저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeNoteModal()" style="flex:1;">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CATTLE_ID = {{ cattle.id }};
+
+// ============================================================
+// 공통 헬퍼
+// ============================================================
+function openModal(id)  { const m = document.getElementById(id); m.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; document.body.style.overflow = ''; }
+
+// 모달 바깥 클릭 시 닫기
+['edit-modal','breeding-modal','result-modal','birth-modal','note-modal',
+ 'breeding-edit-modal','note-edit-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+        if (e.target === this) closeModal(id);
+    });
+});
+
+function showAlert(boxId, msg, type = 'danger') {
+    const box = document.getElementById(boxId);
+    box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    box.style.display = 'block';
+}
+function hideAlert(boxId) { document.getElementById(boxId).style.display = 'none'; }
+
+async function apiCall(url, method, body) {
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        const msg = data.detail?.[0]?.msg || data.detail || JSON.stringify(data);
+        throw new Error(msg);
+    }
+    return data;
+}
+
+// ============================================================
+// 정보 수정 모달
+// ============================================================
+function openEditModal()  { openModal('edit-modal'); }
+function closeEditModal() { closeModal('edit-modal'); hideAlert('edit-alert'); }
+
+document.getElementById('edit-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('edit-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('edit-alert');
+    try {
+        const motherId = document.getElementById('edit-mother_id').value;
+        await apiCall(`/api/cattle/${CATTLE_ID}`, 'PUT', {
+            identification_number: document.getElementById('edit-identification_number').value,
+            gender:     document.getElementById('edit-gender').value,
+            birth_date: document.getElementById('edit-birth_date').value,
+            status:     document.getElementById('edit-status').value,
+            mother_id:  motherId ? parseInt(motherId) : null,
+        });
+        window.location.reload();
+    } catch(err) {
+        showAlert('edit-alert', '❌ 저장 실패: ' + err.message);
+    } finally {
+        btn.disabled = false; btn.textContent = '저장하기';
+    }
+});
+
+// ============================================================
+// 수정 기록 추가 모달
+// ============================================================
+function openBreedingModal() {
+    document.getElementById('breeding-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('breeding-semen_id').value = '';
+    document.getElementById('breeding-notes').value = '';
+    hideAlert('breeding-alert');
+    openModal('breeding-modal');
+}
+function closeBreedingModal() { closeModal('breeding-modal'); hideAlert('breeding-alert'); }
+
+document.getElementById('breeding-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('breeding-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('breeding-alert');
+
+    const body = {
+        cattle_id:     CATTLE_ID,
+        breeding_date: document.getElementById('breeding-date').value,
+    };
+    const semen = document.getElementById('breeding-semen_id').value.trim();
+    if (semen) body.semen_id = semen;
+    const notes = document.getElementById('breeding-notes').value.trim();
+    if (notes) body.notes = notes;
+
+    try {
+        await apiCall('/api/breeding/', 'POST', body);
+        window.location.reload();
+    } catch(err) {
+        showAlert('breeding-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '기록 저장';
+    }
+});
+
+// ============================================================
+// 임신 결과 입력 모달
+// ============================================================
+function openResultModal(breedingId) {
+    document.getElementById('result-breeding-id').value = breedingId;
+    document.querySelectorAll('input[name="result"]').forEach(r => r.checked = false);
+    document.getElementById('result-pregnant-label').style.borderColor = '#e5e7eb';
+    document.getElementById('result-failed-label').style.borderColor = '#e5e7eb';
+    document.getElementById('result-check-date').value = new Date().toISOString().slice(0, 10);
+    hideAlert('result-alert');
+    openModal('result-modal');
+}
+function closeResultModal() { closeModal('result-modal'); hideAlert('result-alert'); }
+
+document.querySelectorAll('input[name="result"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('result-pregnant-label').style.borderColor = '#e5e7eb';
+        document.getElementById('result-failed-label').style.borderColor = '#e5e7eb';
+        if (this.value === 'PREGNANT') {
+            document.getElementById('result-pregnant-label').style.borderColor = '#16a34a';
+        } else {
+            document.getElementById('result-failed-label').style.borderColor = '#dc2626';
+        }
+    });
+});
+
+document.getElementById('result-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const selected = document.querySelector('input[name="result"]:checked');
+    if (!selected) { showAlert('result-alert', '❌ 결과를 선택해주세요.'); return; }
+
+    const btn = document.getElementById('result-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('result-alert');
+
+    const breedingId = document.getElementById('result-breeding-id').value;
+    try {
+        await apiCall(`/api/breeding/${breedingId}/result`, 'PUT', {
+            result:            selected.value,
+            result_check_date: document.getElementById('result-check-date').value,
+        });
+        window.location.reload();
+    } catch(err) {
+        showAlert('result-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '저장';
+    }
+});
+
+// ============================================================
+// 출산 정보 입력 모달
+// ============================================================
+function openBirthModal(breedingId) {
+    document.getElementById('birth-breeding-id').value = breedingId;
+    document.querySelectorAll('input[name="birth_type"]').forEach(r => r.checked = false);
+    document.getElementById('birth-easy-label').style.borderColor = '#e5e7eb';
+    document.getElementById('birth-difficult-label').style.borderColor = '#e5e7eb';
+    document.getElementById('birth-actual-date').value = new Date().toISOString().slice(0, 10);
+    hideAlert('birth-alert');
+    openModal('birth-modal');
+}
+function closeBirthModal() { closeModal('birth-modal'); hideAlert('birth-alert'); }
+
+document.querySelectorAll('input[name="birth_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('birth-easy-label').style.borderColor = '#e5e7eb';
+        document.getElementById('birth-difficult-label').style.borderColor = '#e5e7eb';
+        if (this.value === 'EASY') {
+            document.getElementById('birth-easy-label').style.borderColor = '#16a34a';
+        } else {
+            document.getElementById('birth-difficult-label').style.borderColor = '#dc2626';
+        }
+    });
+});
+
+document.getElementById('birth-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const selected = document.querySelector('input[name="birth_type"]:checked');
+    if (!selected) { showAlert('birth-alert', '❌ 출산 유형을 선택해주세요.'); return; }
+
+    const btn = document.getElementById('birth-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('birth-alert');
+
+    const breedingId = document.getElementById('birth-breeding-id').value;
+    try {
+        await apiCall(`/api/breeding/${breedingId}/birth`, 'PUT', {
+            actual_calving_date: document.getElementById('birth-actual-date').value,
+            birth_type:          selected.value,
+        });
+        window.location.reload();
+    } catch(err) {
+        showAlert('birth-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '저장';
+    }
+});
+
+// ============================================================
+// 특이사항 추가 모달
+// ============================================================
+function openNoteModal() {
+    document.getElementById('note-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('note-type').value = '';
+    document.getElementById('note-content').value = '';
+    hideAlert('note-alert');
+    openModal('note-modal');
+}
+function closeNoteModal() { closeModal('note-modal'); hideAlert('note-alert'); }
+
+document.getElementById('note-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('note-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('note-alert');
+
+    try {
+        await apiCall('/api/notes/', 'POST', {
+            cattle_id: CATTLE_ID,
+            note_date: document.getElementById('note-date').value,
+            note_type: document.getElementById('note-type').value,
+            content:   document.getElementById('note-content').value,
+        });
+        window.location.reload();
+    } catch(err) {
+        showAlert('note-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '저장';
+    }
+});
+
+// ============================================================
+// 수정 기록 편집 모달
+// ============================================================
+function toggleBreedingEditResultFields() {
+    const result = document.getElementById('breeding-edit-result').value;
+    const rdGroup = document.getElementById('breeding-edit-result-date-group');
+    const birthGroup = document.getElementById('breeding-edit-birth-group');
+    rdGroup.style.display    = (result === 'PENDING') ? 'none' : 'block';
+    birthGroup.style.display = (result === 'PREGNANT') ? 'block' : 'none';
+}
+
+function openBreedingEditModal(d) {
+    document.getElementById('breeding-edit-id').value          = d.id;
+    document.getElementById('breeding-edit-date').value        = d.date;
+    document.getElementById('breeding-edit-semen').value       = d.semen;
+    document.getElementById('breeding-edit-result').value      = d.result;
+    document.getElementById('breeding-edit-result-date').value = d.resultDate;
+    document.getElementById('breeding-edit-actual-date').value = d.actualDate;
+    document.getElementById('breeding-edit-birth-type').value  = d.birthType;
+    document.getElementById('breeding-edit-notes').value       = d.notes;
+    toggleBreedingEditResultFields();
+    hideAlert('breeding-edit-alert');
+    openModal('breeding-edit-modal');
+}
+function closeBreedingEditModal() { closeModal('breeding-edit-modal'); hideAlert('breeding-edit-alert'); }
+
+// 수정 기록 편집 버튼 — 이벤트 위임
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-breeding-edit');
+    if (!btn) return;
+    openBreedingEditModal({
+        id:         btn.dataset.id,
+        date:       btn.dataset.date,
+        semen:      btn.dataset.semen,
+        result:     btn.dataset.result,
+        resultDate: btn.dataset.resultDate,
+        actualDate: btn.dataset.actualDate,
+        birthType:  btn.dataset.birthType,
+        notes:      btn.dataset.notes,
+    });
+});
+
+document.getElementById('breeding-edit-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('breeding-edit-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('breeding-edit-alert');
+
+    const id     = document.getElementById('breeding-edit-id').value;
+    const result = document.getElementById('breeding-edit-result').value;
+    const body   = {
+        breeding_date: document.getElementById('breeding-edit-date').value,
+        result:        result,
+    };
+    const semen = document.getElementById('breeding-edit-semen').value.trim();
+    if (semen) body.semen_id = semen;
+    const notes = document.getElementById('breeding-edit-notes').value.trim();
+    if (notes) body.notes = notes;
+    if (result !== 'PENDING') {
+        const rd = document.getElementById('breeding-edit-result-date').value;
+        if (rd) body.result_check_date = rd;
+    }
+    if (result === 'PREGNANT') {
+        const ad = document.getElementById('breeding-edit-actual-date').value;
+        if (ad) body.actual_calving_date = ad;
+        const bt = document.getElementById('breeding-edit-birth-type').value;
+        if (bt) body.birth_type = bt;
+    }
+
+    try {
+        await apiCall(`/api/breeding/${id}`, 'PUT', body);
+        window.location.reload();
+    } catch(err) {
+        showAlert('breeding-edit-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '저장';
+    }
+});
+
+// ============================================================
+// 특이사항 편집 모달
+// ============================================================
+function closeNoteEditModal() { closeModal('note-edit-modal'); hideAlert('note-edit-alert'); }
+
+// 특이사항 수정 버튼 — 이벤트 위임
+document.addEventListener('click', function(e) {
+    const editBtn = e.target.closest('.btn-note-edit');
+    if (editBtn) {
+        document.getElementById('note-edit-id').value      = editBtn.dataset.id;
+        document.getElementById('note-edit-date').value    = editBtn.dataset.date;
+        document.getElementById('note-edit-type').value    = editBtn.dataset.type;
+        document.getElementById('note-edit-content').value = editBtn.dataset.content;
+        hideAlert('note-edit-alert');
+        openModal('note-edit-modal');
+        return;
+    }
+
+    // 특이사항 삭제 버튼 — 모달 없이 바로 삭제
+    const delBtn = e.target.closest('.btn-note-delete');
+    if (delBtn) {
+        if (!confirm('이 특이사항을 삭제하시겠습니까?')) return;
+        const id = delBtn.dataset.id;
+        fetch(`/api/notes/${id}`, { method: 'DELETE' })
+            .then(res => { if (!res.ok) throw new Error(); window.location.reload(); })
+            .catch(() => alert('삭제 중 오류가 발생했습니다.'));
+    }
+});
+
+document.getElementById('note-edit-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('note-edit-submit-btn');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    hideAlert('note-edit-alert');
+
+    const id = document.getElementById('note-edit-id').value;
+    try {
+        await apiCall(`/api/notes/${id}`, 'PUT', {
+            note_date: document.getElementById('note-edit-date').value,
+            note_type: document.getElementById('note-edit-type').value,
+            content:   document.getElementById('note-edit-content').value,
+        });
+        window.location.reload();
+    } catch(err) {
+        showAlert('note-edit-alert', '❌ 저장 실패: ' + err.message);
+        btn.disabled = false; btn.textContent = '저장';
+    }
+});
+
+// 특이사항 편집 모달 내 삭제 버튼
+document.getElementById('note-edit-delete-btn').addEventListener('click', async function() {
+    if (!confirm('이 특이사항을 삭제하시겠습니까?')) return;
+    const id = document.getElementById('note-edit-id').value;
+    try {
+        const res = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('삭제 실패');
+        window.location.reload();
+    } catch(err) {
+        showAlert('note-edit-alert', '❌ 삭제 실패: ' + err.message);
+    }
+});
+
+// ============================================================
+// 특이사항 활성화/비활성화 토글
+// ============================================================
+document.addEventListener('change', async function(e) {
+    const cb = e.target.closest('.note-active-toggle');
+    if (!cb) return;
+
+    const id      = cb.dataset.id;
+    const isActive = cb.checked;
+
+    // UI 즉시 반영
+    const row = cb.closest('.note-row');
+    if (isActive) {
+        row.classList.remove('note-inactive');
+        row.querySelectorAll('[data-inactive-style]').forEach(el => el.removeAttribute('style'));
+    } else {
+        row.classList.add('note-inactive');
+    }
+
+    try {
+        await apiCall(`/api/notes/${id}`, 'PUT', { is_active: isActive });
+        // 성공 시 페이지 새로고침 (리스트 이모지도 갱신)
+        window.location.reload();
+    } catch(err) {
+        // 실패 시 체크박스 원래대로 복구
+        cb.checked = !isActive;
+        alert('상태 변경 중 오류가 발생했습니다: ' + err.message);
+    }
+});
+
+// ============================================================
+// 소 삭제
+// ============================================================
+function deleteCattle() {
+    fetch(`/api/cattle/${CATTLE_ID}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(() => { alert('소가 삭제되었습니다.'); window.location.href = '/cattle'; })
+        .catch(() => alert('삭제 중 오류가 발생했습니다.'));
+}
+</script>
+{% endblock %}

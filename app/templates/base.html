@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Livestock Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1>🐄 Livestock Management System</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="{% if request.url.path == '/' %}active{% endif %}">대시보드</a>
+                <a href="{{ url_for('cattle_list') }}" class="{% if request.url.path.startswith('/cattle') %}active{% endif %}">소 리스트</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 2rem 0; color: #6b7280; font-size: 0.875rem;">
+        <p>&copy; 2024 Livestock Management System. All rights reserved.</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

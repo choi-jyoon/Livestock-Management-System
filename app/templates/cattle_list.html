@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}소 리스트 - Livestock Management System{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;">
+            🐄 소 전체 리스트
+        </h2>
+        {% if page_filter_label %}
+        <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--color-text-secondary);">
+            필터: <strong style="color: var(--color-blue);">{{ page_filter_label }}</strong>
+            &nbsp;<span style="color: #d1d5db;">·</span>&nbsp;
+            <a href="{{ url_for('dashboard') }}" style="color: var(--color-text-secondary);">← 대시보드</a>
+            &nbsp;<span style="color: #d1d5db;">·</span>&nbsp;
+            <a href="{{ url_for('cattle_list') }}" style="color: var(--color-text-secondary);">전체 보기</a>
+        </p>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('cattle_new') }}" class="btn btn-primary">+ 새 소 등록</a>
+</div>
+
+<!-- 특수 필터(대시보드 카드 진입)가 아닐 때만 검색 폼 표시 -->
+{% if not current_filter %}
+<div class="card">
+    <form method="get" action="{{ url_for('cattle_list') }}">
+        <div class="flex gap-2 items-center">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <input
+                    type="text"
+                    name="search"
+                    class="form-input"
+                    placeholder="개체 번호 검색..."
+                    value="{{ request.query_params.get('search', '') }}"
+                >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <select name="gender" class="form-input">
+                    <option value="">전체 성별</option>
+                    <option value="FEMALE" {% if request.query_params.get('gender') == 'FEMALE' %}selected{% endif %}>암소</option>
+                    <option value="MALE" {% if request.query_params.get('gender') == 'MALE' %}selected{% endif %}>수소</option>
+                    <option value="FREEMARTIN" {% if request.query_params.get('gender') == 'FREEMARTIN' %}selected{% endif %}>프리마틴</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <select name="status" class="form-input">
+                    <option value="">전체 상태</option>
+                    <option value="ACTIVE" {% if request.query_params.get('status') == 'ACTIVE' %}selected{% endif %}>활성</option>
+                    <option value="SOLD" {% if request.query_params.get('status') == 'SOLD' %}selected{% endif %}>판매됨</option>
+                    <option value="DECEASED" {% if request.query_params.get('status') == 'DECEASED' %}selected{% endif %}>폐사</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">검색</button>
+            <a href="{{ url_for('cattle_list') }}" class="btn btn-secondary">초기화</a>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- 통계 요약 -->
+<div class="alert alert-info">
+    총 <strong>{{ total }}</strong>마리
+    {% if cattle_list|length != total %}
+    중 <strong>{{ cattle_list|length }}</strong>마리 표시
+    {% endif %}
+</div>
+
+<!-- 테이블 -->
+<div class="card" style="padding: 0;">
+    <div class="table-container">
+        <table class="clickable-table">
+            <thead>
+                <tr>
+                    <th>개체번호</th>
+                    <th>성별</th>
+                    <th>출생일</th>
+                    <th>개월 수</th>
+                    <th>상태</th>
+                    <th>모 개체</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if cattle_list %}
+                    {% for cattle in cattle_list %}
+                    <tr class="cattle-row" data-href="{{ url_for('cattle_detail', cattle_id=cattle.id) }}" style="cursor: pointer;">
+                        <td>
+                            <span style="color: var(--color-blue); font-weight: 700;">
+                                {{ cattle.identification_number }}
+                            </span>
+                            {% if cattle.id in notes_type_map %}
+                                <span style="margin-left: 5px; font-size: 0.9rem; letter-spacing: 1px;">
+                                    {%- set types = notes_type_map[cattle.id] -%}
+                                    {%- if 'SYMPTOM' in types %}<span title="증상">🤒</span>{% endif -%}
+                                    {%- if 'TREATMENT' in types %}<span title="투약/치료">💊</span>{% endif -%}
+                                    {%- if 'BIRTH' in types %}<span title="출산">🐣</span>{% endif -%}
+                                    {%- if 'OTHER' in types %}<span title="기타 특이사항">📌</span>{% endif -%}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cattle.gender.value == 'FEMALE' %}
+                                <span class="badge badge-info">암소 ♀</span>
+                            {% elif cattle.gender.value == 'MALE' %}
+                                <span class="badge" style="background: #dbeafe; color: #1e40af;">수소 ♂</span>
+                            {% else %}
+                                <span class="badge" style="background: #e5e7eb; color: #374151;">프리마틴</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ cattle.birth_date }}</td>
+                        <td>{{ cattle.age_months }}개월</td>
+                        <td>
+                            {% if cattle.status.value == 'ACTIVE' %}
+                                <span class="badge badge-success">활성</span>
+                            {% elif cattle.status.value == 'SOLD' %}
+                                <span class="badge badge-warning">판매됨</span>
+                            {% else %}
+                                <span class="badge badge-danger">폐사</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cattle.mother_id and cattle.mother_id in mother_number_map %}
+                                <a href="{{ url_for('cattle_detail', cattle_id=cattle.mother_id) }}"
+                                   onclick="event.stopPropagation()"
+                                   style="color: #6b7280; font-weight: 600; text-decoration: none;">
+                                    {{ mother_number_map[cattle.mother_id] }}
+                                </a>
+                            {% elif cattle.mother_id %}
+                                <a href="{{ url_for('cattle_detail', cattle_id=cattle.mother_id) }}"
+                                   onclick="event.stopPropagation()"
+                                   style="color: #6b7280; text-decoration: none;">
+                                    모 #{{ cattle.mother_id }}
+                                </a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">🐄</div>
+                                <p>등록된 소가 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total > 20 %}
+<div class="text-center mt-2">
+    <p style="color: #6b7280; font-size: 0.875rem;">페이지네이션은 추후 구현 예정</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 행 전체 클릭 → 상세 이동
+document.querySelectorAll('.cattle-row').forEach(function(row) {
+    row.addEventListener('click', function() {
+        window.location.href = this.dataset.href;
+    });
+});
+</script>
+{% endblock %}
